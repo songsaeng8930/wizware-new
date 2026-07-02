@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>AI 회계 클로징 - 기존 UI 현황</title>
+<style>
+  body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 40px; }
+  h1 { text-align: center; margin-bottom: 40px; font-size: 28px; }
+  .card { background: #16213e; border-radius: 16px; margin-bottom: 48px; padding: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+  .card h2 { color: #4f6aff; font-size: 20px; margin: 0 0 4px; }
+  .card p { color: #aaa; font-size: 14px; margin: 0 0 16px; }
+  .card img { width: 100%; border-radius: 8px; border: 1px solid #333; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+  .done { background: #1b4332; color: #52b788; }
+  .shell { background: #3a2e00; color: #f0c040; }
+  .core { background: #3e1929; color: #f06292; }
+</style>
+</head>
+<body>
+<h1>AI 회계 클로징 관련 - 기존 UI 현황 7개</h1>
+
+<div class="card">
+  <h2>1. 통장 AI 분류 <span class="tag shell">UI 완성 / AI 엔진 없음</span></h2>
+  <p>파일 업로드 + 컬럼 매핑 + AI 분류 결과 테이블 (신뢰도 프로그레스바, 계정과목 수정 드롭다운). 현재 더미 데이터 10건만 표시.</p>
+  <img src="1_tax_bank_ai.png">
+</div>
+
+<div class="card">
+  <h2>2. 결산준비 체크리스트 <span class="tag done">프레임워크 완성</span></h2>
+  <p>D-day 카운트다운 + 매출/매입/비용 요약 + 자동체크 5개 + 수동체크 5개 + 세무사 자료 패키지 ZIP 다운로드. AI 분류 결과가 여기로 연결됨.</p>
+  <img src="2_closing_checklist.png">
+</div>
+
+<div class="card">
+  <h2>3. 세금계산서 <span class="tag done">완전 작동</span></h2>
+  <p>매출/매입 탭 + 거래처별 집계 + 공급가액/세액 합계 + 부가세 예상 납부액. DB 연동 완료.</p>
+  <img src="3_tax_invoice.png">
+</div>
+
+<div class="card">
+  <h2>4. 카드 지출내역 <span class="tag done">완전 작동</span></h2>
+  <p>카드별/부서별 필터 + CRUD + 사용구분(법인/개인) + 사업명/문서번호 연동. 10건 샘플 데이터.</p>
+  <img src="4_card_expenses.png">
+</div>
+
+<div class="card">
+  <h2>5. 법인카드 정산 <span class="tag done">완전 작동</span></h2>
+  <p>정산대기/완료 탭 + 규정준수 뱃지 + 일괄정산 + 승인내역. 결재 승인 시 자동정산 연동.</p>
+  <img src="5_card_settlement.png">
+</div>
+
+<div class="card">
+  <h2>6. 서류 요청/알림 <span class="tag done">워크플로우 완성</span></h2>
+  <p>세무사 ↔ 회사 간 서류 요청/업로드/확인 워크플로우. 상태 추적 + 파일 첨부 + 알림.</p>
+  <img src="6_tax_docs.png">
+</div>
+
+<div class="card">
+  <h2>7. 세무 리포트 <span class="tag done">완전 작동</span></h2>
+  <p>매출/매입 합계 + 부가세 예상 납부액 + 월별 차트 + 계정과목별 도넛차트 + 비중 테이블.</p>
+  <img src="7_tax_report.png">
+</div>
+
+<div style="text-align:center; padding: 40px; color: #666; font-size: 14px;">
+  <strong style="color:#f06292;">빠진 핵심:</strong> AI 분류 엔진 (LLM 연동) + 증빙 교차 매칭 (카드↔세금계산서↔통장) + 현금흐름 예측
+</div>
+</body>
+</html>

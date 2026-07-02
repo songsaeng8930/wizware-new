@@ -1,0 +1,54 @@
+meeting/
+
+# --- 보안: 절대 커밋 금지 ---
+config/api_settings.json
+
+# 런타임 상태 (전역 UI 테마 — 기본값 light 는 코드에 내장)
+config/ui_settings.json
+# 런타임 상태 (결재 기본 라인 depth — 기본값 division_head 는 코드에 내장)
+config/approval_settings.json
+config/database.local.php
+config/*.local.php
+.env
+.env.*
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 로그 / 임시 / 업로드
+*.log
+logs/
+tmp/
+uploads/
+storage/
+
+# 의존성 / 빌드 산출물 (향후 도입 대비)
+vendor/
+node_modules/
+composer.phar
+
+# 로컬 MySQL 데이터 (개발 환경)
+.mysql_data/
+
+# Claude Code 로컬 설정
+.claude/
+.playwright-mcp/
+
+# 민감 문서
+BANK API KEY.md
+
+# 실제 회사 금융 데이터 (민감 — 절대 커밋 금지)
+주식회사 위븐*.xls
+*.xls
+*.xlsx
+*.zip
+_ledger_truth.json
+_verify_*.js
+_import_patterns.sql
+_final_patterns.json
+
+# OMC 로컬 상태
+.omc/

@@ -1,0 +1,31 @@
+{
+    "levels": [
+        {
+            "depth": 0,
+            "key": "company",
+            "label": "회사",
+            "head_title": "대표",
+            "enabled": true
+        },
+        {
+            "depth": 1,
+            "key": "division",
+            "label": "본부",
+            "head_title": "본부장",
+            "enabled": true
+        },
+        {
+            "depth": 2,
+            "key": "department",
+            "label": "부서",
+            "head_title": "부서장",
+            "enabled": true
+        }
+    ],
+    "slot_map": {
+        "부서장": "department.head",
+        "본부장": "division.head",
+        "대표": "company.head"
+    },
+    "title_system": "rank_only"
+}
