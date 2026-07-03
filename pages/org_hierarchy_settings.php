@@ -225,7 +225,7 @@ $titleSystem = $hierarchy['title_system'] ?? 'rank_and_duty';
         .hr-name { width:0; flex:1; min-width:0; padding:2px 6px; font-size:13px; line-height:1.4; color:var(--zm-text-strong); border:1px solid transparent; border-radius:4px; background:transparent; outline:none; transition:background 0.15s, border-color 0.15s; -webkit-appearance:none; }
         .hr-name:hover { background:var(--zm-surface-2); }
         .hr-name:focus { background:var(--zm-surface-0); border-color:var(--zm-surface-3); }
-        .hr-use { font-size:9px; font-weight:500; color:var(--zm-text-muted); background:var(--zm-surface-2); padding:1px 0; border-radius:8px; line-height:14px; flex-shrink:0; width:30px; text-align:center; font-variant-numeric:tabular-nums; }
+        .hr-use { font-size:12px; font-weight:500; color:var(--zm-text-muted); background:var(--zm-surface-2); padding:2px 0; border-radius:8px; line-height:16px; flex-shrink:0; width:38px; text-align:center; font-variant-numeric:tabular-nums; }
         .hr-use-zero { opacity:0.4; }
         .hr-menu-btn { display:flex; align-items:center; justify-content:center; width:22px; height:22px; border:none; background:transparent; cursor:pointer; color:var(--zm-text-subtle); font-size:14px; font-weight:700; letter-spacing:-1px; flex-shrink:0; border-radius:4px; opacity:0; transition:all 0.1s; line-height:1; }
         .hr-item:hover .hr-menu-btn { opacity:0.5; }
