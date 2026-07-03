@@ -19,7 +19,25 @@ $titleSystem = $hierarchy['title_system'] ?? 'rank_and_duty';
 ?>
 
 <div id="mainContent" class="ml-60 mt-14 transition-all duration-300">
-<main class="p-6">
+<main id="orgTermRoot" class="p-6">
+
+<!-- 조직 용어 설정 탭 가독성: 작은 글씨 일괄 확대 (이 탭 범위 한정) -->
+<style>
+#orgTermRoot .text-\[8px\]  { font-size: 13px; }
+#orgTermRoot .text-\[9px\]  { font-size: 13px; }
+#orgTermRoot .text-\[10px\] { font-size: 14px; }
+#orgTermRoot .text-\[11px\] { font-size: 14px; }
+#orgTermRoot .text-xs       { font-size: 14px; }
+#orgTermRoot .text-sm       { font-size: 16px; }
+#orgTermRoot .text-\[15px\] { font-size: 17px; }
+/* 인라인 font-size 도 동일하게 확대 */
+#orgTermRoot [style*="font-size:9px"]  { font-size: 13px !important; }
+#orgTermRoot [style*="font-size:10px"] { font-size: 14px !important; }
+#orgTermRoot [style*="font-size:11px"] { font-size: 14px !important; }
+#orgTermRoot [style*="font-size:12px"] { font-size: 14px !important; }
+#orgTermRoot [style*="font-size:13px"] { font-size: 15px !important; }
+#orgTermRoot [style*="font-size:14px"] { font-size: 16px !important; }
+</style>
 
     <!-- 페이지 헤더 -->
     <div class="mb-5">
