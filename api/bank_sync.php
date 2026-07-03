@@ -20,6 +20,7 @@ require_once __DIR__ . '/../includes/api_auth.php';      // 세션 + 로그인 +
 require_once __DIR__ . '/../includes/api_common.php';    // apiOk / apiError / apiJsonInput / 권한
 require_once __DIR__ . '/../includes/bank/provider.php'; // bank_provider_request, BANKAPI_BANKS
 require_once __DIR__ . '/../includes/bank/classify.php'; // bank_classify_one
+require_once __DIR__ . '/../includes/bank/learn.php';    // bank_classify_smart (학습규칙 우선)
 require_once __DIR__ . '/../config/database.php';
 
 $action = $_GET['action'] ?? 'sync';

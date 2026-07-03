@@ -44,27 +44,35 @@ function bank_rag_suggest(PDO $pdo, array $tx, int $topK = 5): ?array
     $queryTokens = bank_rag_tokens($desc . ' ' . $cp);
     if (!$queryTokens) return null;
 
-    try {
-        // 같은 유형의 "확정" 거래만 후보 (자기 자신 제외)
-        $st = $pdo->prepare(
-            "SELECT id, description, counterparty, account_code, account_name
-             FROM bank_transactions
-             WHERE is_confirmed = 1 AND account_code IS NOT NULL AND account_code <> ''
-               AND tx_type = ? AND id <> ?
-             ORDER BY transaction_date DESC
-             LIMIT 500"
-        );
-        $st->execute([$txType, (int)($tx['id'] ?? 0)]);
-    } catch (Throwable $e) {
-        return null;
+    // 후보(확정 거래)는 요청 단위 캐시 · 재분류 루프에서 거래마다 500행 재조회/재토큰화 방지
+    static $candidateCache = [];
+    if (!isset($candidateCache[$txType])) {
+        try {
+            $st = $pdo->prepare(
+                "SELECT id, description, counterparty, account_code, account_name
+                 FROM bank_transactions
+                 WHERE is_confirmed = 1 AND account_code IS NOT NULL AND account_code <> ''
+                   AND tx_type = ?
+                 ORDER BY transaction_date DESC
+                 LIMIT 500"
+            );
+            $st->execute([$txType]);
+            $cands = [];
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $r['tokens'] = bank_rag_tokens((string)$r['description'] . ' ' . (string)$r['counterparty']);
+                $cands[] = $r;
+            }
+            $candidateCache[$txType] = $cands;
+        } catch (Throwable $e) {
+            return null;
+        }
     }
 
+    $selfId = (int)($tx['id'] ?? 0);
     $scored = [];
-    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $sim = bank_rag_similarity(
-            $queryTokens,
-            bank_rag_tokens((string)$r['description'] . ' ' . (string)$r['counterparty'])
-        );
+    foreach ($candidateCache[$txType] as $r) {
+        if ($selfId > 0 && (int)$r['id'] === $selfId) continue; // 자기 자신 제외
+        $sim = bank_rag_similarity($queryTokens, $r['tokens']);
         if ($sim <= 0) continue;
         $scored[] = ['sim' => $sim, 'code' => $r['account_code'], 'name' => $r['account_name'], 'desc' => $r['description']];
     }
@@ -102,10 +110,12 @@ function bank_rag_suggest(PDO $pdo, array $tx, int $topK = 5): ?array
 /** 분류 AI provider 설정 읽기 (config/api_settings.json). 기본 'none'. */
 function bank_rag_provider(): string
 {
+    static $cached = null;                       // 요청 단위 캐시 · 제안마다 파일 재읽기 방지
+    if ($cached !== null) return $cached;
     $f = __DIR__ . '/../../config/api_settings.json';
-    if (!is_file($f)) return 'none';
+    if (!is_file($f)) return $cached = 'none';
     $j = json_decode((string)file_get_contents($f), true);
-    return is_array($j) ? (string)($j['ai_classify_provider'] ?? 'none') : 'none';
+    return $cached = (is_array($j) ? (string)($j['ai_classify_provider'] ?? 'none') : 'none');
 }
 
 /**

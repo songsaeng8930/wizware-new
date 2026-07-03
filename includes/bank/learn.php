@@ -23,11 +23,18 @@ function bank_learn_extract_key(string $description, ?string $counterparty = nul
         if ($cp !== '') return mb_substr($cp, 0, 40);
     }
     // 적요에서 토큰화 · 숫자/기호/짧은 조사 제거 후 가장 긴 토큰
+    // 범용 은행용어는 제외 — 이런 걸 키워드로 배우면 아무 거래나 잡는 광범위 규칙이 생긴다
+    static $stopwords = [
+        '입금', '출금', '이체', '자동이체', '계좌이체', '인터넷뱅킹', '모바일뱅킹',
+        '텔레뱅킹', '폰뱅킹', '카드결제', '체크카드', '결제', '송금', '납부', '지급',
+        '수납', '대금', '거래', '타행', '당행', '창구', '전자금융', '온라인',
+    ];
     $desc = preg_replace('/[0-9\-\_\*\/\.\,\(\)\[\]]+/u', ' ', (string)$description);
     $tokens = preg_split('/\s+/u', trim($desc), -1, PREG_SPLIT_NO_EMPTY) ?: [];
     $best = '';
     foreach ($tokens as $t) {
         if (mb_strlen($t) < 2) continue;
+        if (in_array($t, $stopwords, true)) continue;
         if (mb_strlen($t) > mb_strlen($best)) $best = $t;
     }
     return mb_substr($best, 0, 40);
