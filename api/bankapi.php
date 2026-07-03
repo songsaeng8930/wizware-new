@@ -246,7 +246,7 @@ try {
             $latestBalance = null;
             $pdo = getDBConnection();
             if ($pdo) {
-                $acctStmt = $pdo->prepare('SELECT id FROM bank_accounts WHERE bank_code = ? AND account_no = ?');
+                $acctStmt = $pdo->prepare("SELECT id FROM bank_accounts WHERE bank_code = ? AND REPLACE(account_no, '-', '') = ?");
                 $acctStmt->execute([$bankCode, $accountNumber]);
                 $acctId = $acctStmt->fetchColumn();
                 if ($acctId) {
@@ -1374,7 +1374,8 @@ function getDbTransactions(string $bankCode, string $accountNumber, string $star
     $pdo = getDBConnection();
     if (!$pdo) return [];
 
-    $acctStmt = $pdo->prepare('SELECT id FROM bank_accounts WHERE bank_code = ? AND account_no = ?');
+    // account_no 는 대시 포함 저장("234-567-890123"), 입력은 숫자만 → 대시 제거 후 비교
+    $acctStmt = $pdo->prepare("SELECT id FROM bank_accounts WHERE bank_code = ? AND REPLACE(account_no, '-', '') = ?");
     $acctStmt->execute([$bankCode, $accountNumber]);
     $accountId = $acctStmt->fetchColumn();
     if (!$accountId) return [];
