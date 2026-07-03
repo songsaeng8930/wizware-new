@@ -2885,12 +2885,40 @@ html[data-theme="dark"] .fc .fc-daygrid-dot-event:hover { background: #1e293b !i
     content: '★ '; font-size: 10px;
 }
 /* +N more 링크 */
-.fc .fc-daygrid-more-link { font-size: 11px; color: var(--zm-text-subtle, #6b7280); padding: 2px 4px; }
-.fc .fc-popover { border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.12); }
-html[data-theme="dark"] .fc .fc-popover {
-    background: #1e293b; border-color: #334155; box-shadow: 0 4px 16px rgba(0,0,0,.4);
+.fc .fc-daygrid-more-link { font-size: 11px; color: var(--zm-text-subtle, #6b7280); padding: 2px 4px; font-weight: 500; }
+.fc .fc-daygrid-more-link:hover { color: var(--zm-primary, #4F6AFF); text-decoration: underline; }
+
+/* +N more 팝오버: 불투명 배경 · 스크롤 · 정돈된 리스트 (라이트 배경 누락으로 뒤 캘린더가 비치던 문제 해결) */
+.fc .fc-popover {
+    background: var(--zm-surface-1, #fff);
+    border: 1px solid var(--zm-border, #e5e7eb);
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.08);
+    z-index: 9999;
+    overflow: hidden;
+    min-width: 220px;
+    max-width: 300px;
 }
-.fc .fc-popover-header { font-size: 13px; font-weight: 600; }
+.fc .fc-popover-header {
+    font-size: 13px; font-weight: 600;
+    color: var(--zm-text-strong, #111827);
+    background: var(--zm-surface-2, #f1f5f9);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--zm-border, #e5e7eb);
+}
+.fc .fc-popover-body {
+    padding: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--zm-surface-1, #fff);
+}
+.fc .fc-popover-body .fc-daygrid-event-harness { margin-top: 3px; }
+.fc .fc-popover-body .fc-daygrid-event-harness:first-child { margin-top: 0; }
+html[data-theme="dark"] .fc .fc-popover {
+    background: #1e293b; border-color: #334155; box-shadow: 0 8px 28px rgba(0,0,0,.5);
+}
+html[data-theme="dark"] .fc .fc-popover-header { background: #0f172a; color: #f1f5f9; border-color: #334155; }
+html[data-theme="dark"] .fc .fc-popover-body { background: #1e293b; }
 .fc .fc-scrollgrid { border-radius: 8px; overflow: hidden; }
 .fc .fc-now-indicator-line { border-color: #4F6AFF; }
 .fc .fc-now-indicator-arrow { border-color: #4F6AFF; border-top-color: transparent; border-bottom-color: transparent; }
