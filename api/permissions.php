@@ -53,24 +53,32 @@ function listPerm(PDO $pdo): void {
 
 /** 프로젝트에 정의된 메뉴 키 목록 · 권한 매트릭스 행 구성용 */
 function listMenus(PDO $pdo): void {
-    // 하드코딩 대신 sidebar.php 로직을 간단 참조: 상위 + 알려진 세부 키
+    // 사이드바(includes/sidebar.php) 실제 메뉴 구조와 1:1 일치. group = 사이드바 섹션.
     $menus = [
-        ['key' => 'dashboard',             'label' => '대시보드'],
-        ['key' => 'attendance',            'label' => '근태'],
-        ['key' => 'schedule',              'label' => '일정'],
-        ['key' => 'approval',              'label' => '전자결재'],
-        ['key' => 'approval_admin',        'label' => '결재 운영 (관리)'],
-        ['key' => 'board',                 'label' => '게시판'],
-        ['key' => 'hr',                    'label' => '인사관리'],
-        ['key' => 'hospital',              'label' => '병원 전용'],
-        ['key' => 'accounting',            'label' => '재무관리'],
-        ['key' => 'accounting.settle',     'label' => '재무관리 > 카드 정산 (회계)'],
-        ['key' => 'labor',                 'label' => '노무관리'],
-        ['key' => 'labor.rules',           'label' => '노무관리 > 취업규칙 편집'],
-        ['key' => 'business',              'label' => '사업'],
-        ['key' => 'business_docs',         'label' => '업무자료실/의뢰'],
-        ['key' => 'groupware',             'label' => '그룹웨어 관리 (시스템)'],
-        ['key' => 'groupware.permissions', 'label' => '그룹웨어 관리 > 접근권한'],
+        // ── 내 업무 (전 직원) ──
+        ['key' => 'dashboard',             'label' => '대시보드',        'group' => '내 업무'],
+        ['key' => 'attendance',            'label' => '근태',            'group' => '내 업무'],
+        ['key' => 'schedule',              'label' => '일정',            'group' => '내 업무'],
+        ['key' => 'approval',              'label' => '전자결재',        'group' => '내 업무'],
+        ['key' => 'board',                 'label' => '게시판',          'group' => '내 업무'],
+        ['key' => 'card',                  'label' => '법인카드',        'group' => '내 업무'],
+        ['key' => 'company',               'label' => '우리 회사',       'group' => '내 업무'],
+        ['key' => 'my_payslip',            'label' => '내 급여',         'group' => '내 업무'],
+        // ── 병원 운영 ──
+        ['key' => 'hospital',              'label' => '병원 전용',       'group' => '병원 운영'],
+        // ── 조직운영 (관리자/부서장) ──
+        ['key' => 'hr',                    'label' => '인사관리',        'group' => '조직운영'],
+        ['key' => 'attendance.manage',     'label' => '인사관리 > 근태 관리', 'group' => '조직운영'],
+        ['key' => 'labor',                 'label' => '노무관리',        'group' => '조직운영'],
+        ['key' => 'labor.rules',           'label' => '노무관리 > 취업규칙 편집', 'group' => '조직운영'],
+        ['key' => 'approval_admin',        'label' => '결재 운영 (관리)', 'group' => '조직운영'],
+        ['key' => 'accounting',            'label' => '재무관리',        'group' => '조직운영'],
+        ['key' => 'accounting.settle',     'label' => '재무관리 > 카드 정산 (회계)', 'group' => '조직운영'],
+        ['key' => 'business',              'label' => '사업',            'group' => '조직운영'],
+        ['key' => 'business_docs',         'label' => '업무자료실/의뢰',  'group' => '조직운영'],
+        // ── 시스템 (관리자) ──
+        ['key' => 'groupware',             'label' => '그룹웨어 관리',    'group' => '시스템'],
+        ['key' => 'groupware.permissions', 'label' => '그룹웨어 관리 > 접근권한', 'group' => '시스템'],
     ];
     $roles = [
         ['key' => 'admin',   'label' => '관리자(admin)'],

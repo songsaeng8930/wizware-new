@@ -138,10 +138,16 @@ function render() {
         tbody.innerHTML = '<tr><td colspan="4" class="py-10 text-center text-slate-500">메뉴 데이터가 없습니다.</td></tr>';
         return;
     }
+    let lastGroup = null;
     tbody.innerHTML = MENUS.map(m => {
         const depth = m.key.includes('.') ? 'pl-8' : 'pl-4';
         const icon  = m.key.includes('.') ? 'corner-down-right' : 'folder';
-        return '<tr class="border-b border-slate-800 hover:bg-slate-950/40">'
+        let groupHeader = '';
+        if (m.group && m.group !== lastGroup) {
+            lastGroup = m.group;
+            groupHeader = '<tr class="bg-slate-950/60"><td colspan="' + (1 + ROLES.length) + '" class="px-4 py-2 text-xs font-bold text-slate-400 tracking-wide uppercase">' + escapeHtml(m.group) + '</td></tr>';
+        }
+        return groupHeader + '<tr class="border-b border-slate-800 hover:bg-slate-950/40">'
              + '<td class="' + depth + ' pr-4 py-2.5">'
              +   '<div class="flex items-center gap-2">'
              +     '<i data-lucide="' + icon + '" class="w-3.5 h-3.5 text-slate-500"></i>'
