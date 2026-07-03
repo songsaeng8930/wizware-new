@@ -217,7 +217,8 @@ note("4) 거래내역 생성: +{$txCreated}건 (급여/세금/예비 계좌)");
 /* ─────────────────────────────────────────────
  * 4-b) 러닝 잔액 재계산 (운영 포함 전 계좌 · 데모 표시용)
  * ───────────────────────────────────────────── */
-$opening = [ (int)$idOper => 30000000, (int)$idPay => 20000000, (int)$idTax => 12000000, (int)$idRsv => 25000000 ];
+// 운영계좌는 기존 DEMO_LEDGER 대량 출금이 있어 기초잔액을 넉넉히 잡아 잔액이 음수가 되지 않게 함
+$opening = [ (int)$idOper => 200000000, (int)$idPay => 20000000, (int)$idTax => 12000000, (int)$idRsv => 25000000 ];
 $updBal = $pdo->prepare("UPDATE bank_transactions SET balance=? WHERE id=?");
 foreach ($opening as $accId => $open) {
     if (!$accId) continue;
