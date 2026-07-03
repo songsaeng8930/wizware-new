@@ -72,7 +72,7 @@ try {
             $pdo->beginTransaction();
             try {
                 // 확정 전 거래 상태 조회(학습 근거: 적요·거래처·이전 제안코드)
-                $sel = $pdo->prepare("SELECT id, description, tx_type, counterparty, account_code FROM bank_transactions WHERE id = ?");
+                $sel = $pdo->prepare("SELECT id, description, tx_type, counterparty, account_code, amount, transaction_date FROM bank_transactions WHERE id = ?");
                 $upd = $pdo->prepare(
                     "UPDATE bank_transactions
                      SET account_code = ?, account_name = ?, is_confirmed = 1
@@ -115,7 +115,7 @@ try {
 
             $where = 'WHERE is_confirmed = 0'; $args = [];
             if ($accountId > 0) { $where .= ' AND account_id = ?'; $args[] = $accountId; }
-            $rows = $pdo->prepare("SELECT id, description, tx_type, counterparty FROM bank_transactions $where");
+            $rows = $pdo->prepare("SELECT id, description, tx_type, counterparty, amount, transaction_date FROM bank_transactions $where");
             $rows->execute($args);
 
             $changed = 0; $bySource = ['learned' => 0, 'rule' => 0, 'rag' => 0];
@@ -123,8 +123,9 @@ try {
             try {
                 $upd = $pdo->prepare("UPDATE bank_transactions SET account_code = ?, account_name = ?, ai_confidence = ? WHERE id = ?");
                 foreach ($rows->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                    // 학습규칙 → 정적규칙 (smart)
-                    $c = bank_classify_smart($pdo, (string)$r['description'], (string)$r['tx_type'], (string)$r['counterparty']);
+                    // 학습규칙(텍스트→금액·주기) → 정적규칙 (smart)
+                    $c = bank_classify_smart($pdo, (string)$r['description'], (string)$r['tx_type'], (string)$r['counterparty'],
+                                             (int)$r['amount'], (string)$r['transaction_date']);
                     // 저신뢰(신규·모호)면 검색기반 RAG 제안이 더 나은지 확인
                     if ((int)$c['confidence'] < 60) {
                         $rag = bank_rag_suggest($pdo, $r);

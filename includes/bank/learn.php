@@ -40,18 +40,28 @@ function bank_learn_extract_key(string $description, ?string $counterparty = nul
     return mb_substr($best, 0, 40);
 }
 
+/** 반복 주기일 근접 판정 · 월말/월초 넘어가는 차이(예: 31일↔2일)도 처리 */
+function bank_learn_day_near(int $day, int $recurrenceDay, int $tolerance = 3): bool
+{
+    $diff = abs($day - $recurrenceDay);
+    return min($diff, 31 - $diff) <= $tolerance;
+}
+
 /**
  * 학습된 규칙으로 분류 시도. classification_patterns 를 읽어 최적 매치 반환.
+ *  - 키워드/거래처 패턴: 적요·거래처 텍스트 매칭 (구체적일수록 우선)
+ *  - 금액·주기 패턴(keyword=''): 적요가 범용어뿐이라 텍스트 근거가 없을 때,
+ *    "매달 비슷한 날 같은 금액" 신호로 매칭 (예: 매달 25일 350만원 = 임대료)
  * @return array|null ['code','name','confidence','pattern_id','source'=>'learned'] 또는 null
  */
-function bank_pattern_classify(PDO $pdo, string $description, string $txType, ?string $counterparty = null): ?array
+function bank_pattern_classify(PDO $pdo, string $description, string $txType, ?string $counterparty = null, ?int $amount = null, ?string $txDate = null): ?array
 {
     $hay = mb_strtolower(trim($description . ' ' . (string)$counterparty));
-    if ($hay === '') return null;
 
     try {
         $st = $pdo->prepare(
-            "SELECT id, keyword, account_code, account_name, counterparty, priority, confidence, hit_count, miss_count
+            "SELECT id, keyword, account_code, account_name, counterparty, amount_min, amount_max,
+                    recurrence, recurrence_day, priority, confidence, hit_count, miss_count
              FROM classification_patterns
              WHERE is_active = 1 AND (tx_type = ? OR tx_type IS NULL OR tx_type = '')
              ORDER BY priority DESC, confidence DESC, hit_count DESC"
@@ -61,18 +71,39 @@ function bank_pattern_classify(PDO $pdo, string $description, string $txType, ?s
         return null; // 패턴 테이블 없거나 조회 실패 → 학습 미적용
     }
 
+    $txDay = ($txDate && ($ts = strtotime($txDate)) !== false) ? (int)date('j', $ts) : null;
+
     $best = null; $bestScore = -1;
     foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $p) {
         $kw = mb_strtolower(trim((string)$p['keyword']));
         $cp = mb_strtolower(trim((string)$p['counterparty']));
-        $matched = ($kw !== '' && mb_strpos($hay, $kw) !== false)
-                || ($cp !== '' && mb_strpos($hay, $cp) !== false);
-        if (!$matched) continue;
+        $score = -1;
 
-        $hit = (int)$p['hit_count']; $miss = (int)$p['miss_count'];
-        $reliability = ($hit + $miss) > 0 ? $hit / ($hit + $miss) : 0.5;
-        // 점수 = 신뢰도 × 적중률 × 키워드 길이(구체적일수록 우선)
-        $score = (int)$p['confidence'] * $reliability * (1 + mb_strlen($kw) / 20);
+        if ($kw !== '' || $cp !== '') {
+            // 텍스트 패턴
+            $matched = ($hay !== '') && (
+                ($kw !== '' && mb_strpos($hay, $kw) !== false)
+                || ($cp !== '' && mb_strpos($hay, $cp) !== false)
+            );
+            if (!$matched) continue;
+            $hit = (int)$p['hit_count']; $miss = (int)$p['miss_count'];
+            $reliability = ($hit + $miss) > 0 ? $hit / ($hit + $miss) : 0.5;
+            // 점수 = 신뢰도 × 적중률 × 키워드 길이(구체적일수록 우선)
+            $score = (int)$p['confidence'] * $reliability * (1 + mb_strlen($kw) / 20);
+        } elseif ($p['amount_min'] !== null && $amount !== null && $amount > 0) {
+            // 금액·주기 패턴 (텍스트 근거 없는 반복 거래용)
+            if ($amount < (int)$p['amount_min'] || $amount > (int)$p['amount_max']) continue;
+            $recDay = $p['recurrence_day'] !== null ? (int)$p['recurrence_day'] : null;
+            if ($recDay !== null && $txDay !== null && !bank_learn_day_near($txDay, $recDay)) continue;
+            $hit = (int)$p['hit_count']; $miss = (int)$p['miss_count'];
+            $reliability = ($hit + $miss) > 0 ? $hit / ($hit + $miss) : 0.5;
+            // 주기일까지 맞으면 가산 · 금액만 맞으면 텍스트 패턴보다 낮게
+            $dayBonus = ($recDay !== null && $txDay !== null) ? 1.1 : 0.9;
+            $score = (int)$p['confidence'] * $reliability * $dayBonus;
+        } else {
+            continue;
+        }
+
         if ($score > $bestScore) {
             $bestScore = $score;
             $best = [
@@ -91,9 +122,9 @@ function bank_pattern_classify(PDO $pdo, string $description, string $txType, ?s
  * 통합 분류기 · 학습규칙 우선 → 정적규칙 폴백. (RAG는 API 오케스트레이션에서 저신뢰건에 추가)
  * @return array ['code','name','confidence','source','pattern_id'?]
  */
-function bank_classify_smart(PDO $pdo, string $description, string $txType, ?string $counterparty = null): array
+function bank_classify_smart(PDO $pdo, string $description, string $txType, ?string $counterparty = null, ?int $amount = null, ?string $txDate = null): array
 {
-    $learned = bank_pattern_classify($pdo, $description, $txType, $counterparty);
+    $learned = bank_pattern_classify($pdo, $description, $txType, $counterparty, $amount, $txDate);
     if ($learned && $learned['confidence'] >= 60) {
         return $learned;
     }
@@ -116,22 +147,44 @@ function bank_learn_from_confirmation(PDO $pdo, array $tx, string $code, string 
     $desc   = (string)($tx['description'] ?? '');
     $cp     = $tx['counterparty'] ?? null;
     $oldCode = trim((string)($tx['account_code'] ?? ''));
+    $amount = isset($tx['amount']) ? (int)$tx['amount'] : 0;
+    $txDate = (string)($tx['transaction_date'] ?? '');
     $keyword = bank_learn_extract_key($desc, $cp);
-    if ($keyword === '') $keyword = mb_substr(trim($desc), 0, 40);
-    if ($keyword === '') return; // 학습 근거 없음
 
-    // 1) 사람이 이전 AI제안과 다른 코드로 바꿨으면, 그 키워드로 잘못 예측했던 패턴 감점
+    // 텍스트 근거가 없으면(범용어뿐) 금액·주기 패턴으로 학습 시도
+    if ($keyword === '') {
+        if ($amount > 0) {
+            bank_learn_amount_pattern($pdo, $tx, $code, $name, $actor);
+        }
+        return;
+    }
+
+    // 1) 사람이 이전 AI제안과 다른 코드로 바꿨으면, 잘못 예측했던 패턴 감점
     if ($oldCode !== '' && $oldCode !== $code) {
+        // 텍스트 패턴 · keyword='' (금액패턴)는 LIKE '%%' 전체매칭이 되므로 반드시 제외
         $mis = $pdo->prepare(
             "UPDATE classification_patterns
              SET miss_count = miss_count + 1,
                  confidence = GREATEST(30, confidence - 10),
                  updated_at = NOW()
-             WHERE is_active = 1 AND account_code = ?
+             WHERE is_active = 1 AND account_code = ? AND keyword <> ''
                AND (tx_type = ? OR tx_type IS NULL OR tx_type = '')
                AND ? LIKE CONCAT('%', keyword, '%')"
         );
         $mis->execute([$oldCode, $txType, mb_strtolower($desc . ' ' . (string)$cp)]);
+        // 금액 패턴 · 이 거래 금액에 걸렸던 오답 패턴 감점
+        if ($amount > 0) {
+            $misAmt = $pdo->prepare(
+                "UPDATE classification_patterns
+                 SET miss_count = miss_count + 1,
+                     confidence = GREATEST(30, confidence - 10),
+                     updated_at = NOW()
+                 WHERE is_active = 1 AND account_code = ? AND keyword = ''
+                   AND (tx_type = ? OR tx_type IS NULL OR tx_type = '')
+                   AND amount_min IS NOT NULL AND ? BETWEEN amount_min AND amount_max"
+            );
+            $misAmt->execute([$oldCode, $txType, $amount]);
+        }
     }
 
     // 2) 정답 코드 패턴 UPSERT (동일 keyword+tx_type+code 있으면 강화, 없으면 신규)
@@ -176,5 +229,82 @@ function bank_learn_from_confirmation(PDO $pdo, array $tx, string $code, string 
         ]);
     } catch (Throwable $e) {
         error_log('[bank_learn] history 기록 실패: ' . $e->getMessage());
+    }
+}
+
+/**
+ * 금액·주기 패턴 학습 · 적요가 범용어뿐이라 텍스트 근거가 없는 반복 거래용.
+ * "같은 금액이 매달 비슷한 날" 신호를 규칙으로 저장한다 (keyword='' 행).
+ */
+function bank_learn_amount_pattern(PDO $pdo, array $tx, string $code, string $name, string $actor = 'user'): void
+{
+    $txType = (string)($tx['tx_type'] ?? '');
+    $amount = (int)($tx['amount'] ?? 0);
+    if ($amount <= 0) return;
+    $txDate = (string)($tx['transaction_date'] ?? '');
+    $day = ($txDate && ($ts = strtotime($txDate)) !== false) ? (int)date('j', $ts) : null;
+
+    // 사람이 이전 제안과 다른 코드로 정정했으면, 이 금액대에 걸렸던 오답 금액패턴 감점
+    $oldCode = trim((string)($tx['account_code'] ?? ''));
+    if ($oldCode !== '' && $oldCode !== $code) {
+        $mis = $pdo->prepare(
+            "UPDATE classification_patterns
+             SET miss_count = miss_count + 1,
+                 confidence = GREATEST(30, confidence - 10),
+                 updated_at = NOW()
+             WHERE is_active = 1 AND account_code = ? AND keyword = ''
+               AND (tx_type = ? OR tx_type IS NULL OR tx_type = '')
+               AND amount_min IS NOT NULL AND ? BETWEEN amount_min AND amount_max"
+        );
+        $mis->execute([$oldCode, $txType, $amount]);
+    }
+
+    // 동일 금액대(±2%) 기존 패턴 있으면 강화, 없으면 신규
+    $find = $pdo->prepare(
+        "SELECT id FROM classification_patterns
+         WHERE keyword = '' AND account_code = ?
+           AND (tx_type = ? OR tx_type IS NULL OR tx_type = '')
+           AND amount_min IS NOT NULL AND ? BETWEEN amount_min AND amount_max
+         LIMIT 1"
+    );
+    $find->execute([$code, $txType, $amount]);
+    $row = $find->fetch(PDO::FETCH_ASSOC);
+
+    if ($row) {
+        $patternId = (int)$row['id'];
+        $pdo->prepare(
+            "UPDATE classification_patterns
+             SET hit_count = hit_count + 1,
+                 confidence = LEAST(98, confidence + 5),
+                 account_name = ?, is_active = 1, updated_at = NOW()
+             WHERE id = ?"
+        )->execute([$name, $patternId]);
+    } else {
+        // 금액 허용폭 ±2% (자동이체 금액 미세 변동 대응) · 시작 신뢰도는 텍스트 패턴보다 낮게
+        $min = (int)floor($amount * 0.98);
+        $max = (int)ceil($amount * 1.02);
+        $ins = $pdo->prepare(
+            "INSERT INTO classification_patterns
+                (keyword, tx_type, account_code, account_name, counterparty,
+                 amount_min, amount_max, recurrence, recurrence_day,
+                 priority, confidence, hit_count, miss_count, source, is_active, created_at, updated_at)
+             VALUES ('', ?, ?, ?, NULL, ?, ?, ?, ?, 5, 65, 1, 0, 'user', 1, NOW(), NOW())"
+        );
+        $ins->execute([$txType, $code, $name, $min, $max, $day !== null ? 'monthly' : 'none', $day]);
+        $patternId = (int)$pdo->lastInsertId();
+    }
+
+    try {
+        $pdo->prepare(
+            "INSERT INTO classification_history
+                (transaction_id, old_account_code, new_account_code, new_account_name, action, pattern_id, actor, memo, created_at)
+             VALUES (?, ?, ?, ?, 'confirm', ?, ?, '금액·주기 패턴 학습', NOW())"
+        )->execute([
+            (int)($tx['id'] ?? 0),
+            (trim((string)($tx['account_code'] ?? '')) !== '' ? $tx['account_code'] : null),
+            $code, $name, $patternId, $actor
+        ]);
+    } catch (Throwable $e) {
+        error_log('[bank_learn] amount history 기록 실패: ' . $e->getMessage());
     }
 }

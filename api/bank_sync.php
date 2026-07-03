@@ -108,8 +108,8 @@ try {
         $dup->execute([$accountId, $date, $amount, $desc, $balance, $balance]);
         if ($dup->fetchColumn()) { $skipped++; continue; }
 
-        // 분류 제안 메타 · 학습규칙 우선, 없으면 정적규칙 (세무·금액 계산은 건드리지 않음)
-        $cls = bank_classify_smart($pdo, $desc, $txType);
+        // 분류 제안 메타 · 학습규칙(텍스트→금액·주기) 우선, 없으면 정적규칙 (세무·금액 계산은 건드리지 않음)
+        $cls = bank_classify_smart($pdo, $desc, $txType, null, $amount, $date);
 
         $insTx->execute([
             $accountId, $date, $desc, $amount, $txType, $balance,
