@@ -618,14 +618,11 @@ async function loadAccounts() {
         buildAccountSelect(accountsList);
         mainView.classList.remove('hidden');
 
-        if (!savedResidentNo) {
-            document.getElementById('residentAlert').classList.remove('hidden');
-        } else {
-            document.getElementById('residentAlert').classList.add('hidden');
-        }
+        // 데모 모드: 사업자번호 없이도 더미 거래내역을 조회하므로 안내 배너 숨김
+        document.getElementById('residentAlert').classList.add('hidden');
 
         if (window.lucide) lucide.createIcons();
-        loadFromDb();
+        setPeriod('3month');   // 더미 데이터가 보이도록 기본 조회기간을 최근 3개월로
     } catch (e) {
         loading.classList.add('hidden');
         showApiError(e.message);
@@ -818,18 +815,17 @@ function setPeriod(type) {
 //  거래내역 조회
 // ═══════════════════════════════════════
 
-function requestFetch() {
+async function requestFetch() {
+    // 데모 모드: 실제 은행 연동(사업자번호·계좌비밀번호) 대신 DB에 적재된 더미 거래내역을 조회한다.
     var val = document.getElementById('accountSelect').value;
     if (!val) return;
-    if (!savedResidentNo) { openResidentModal(); return; }
 
-    var parts = val.split('|');
-    var acct = accountsList.find(function(a) { return a.bankCode === parts[0] && a.accountNumber === parts[1]; });
-    if (acct && acct.hasPassword) {
-        fetchTransactions('__saved__');
-        return;
-    }
-    openPasswordModal();
+    setBtnFetchLoading(true, '조회 중...');
+    document.getElementById('txLoading').classList.remove('hidden');
+    var n = await loadFromDb();
+    document.getElementById('txLoading').classList.add('hidden');
+    setBtnFetchLoading(false);
+    if (!n) showTxError('조회 결과', '해당 기간에 거래내역이 없습니다. 조회 기간을 넓혀 다시 조회해 보세요.');
 }
 
 function openPasswordModal() {
@@ -966,8 +962,10 @@ async function loadFromDb() {
                 else agoText = Math.floor(diffMin / 1440) + '일 전';
                 document.getElementById('txFilterCount').textContent = '마지막 동기화: ' + agoText;
             }
+            return dbTx.length;
         }
-    } catch (e) {}
+        return 0;
+    } catch (e) { return 0; }
 }
 
 async function fetchTransactions(accountPw) {
