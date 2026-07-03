@@ -1,6 +1,8 @@
 <?php
 $pageTitle = '공통코드 관리';
 $currentPage = 'groupware';
+require_once __DIR__ . '/../includes/permissions.php';
+requireMenuPermission('groupware', 'view'); // 접근권한 관리 연동 (admin 항상 통과)
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 require_once __DIR__ . '/../config/database.php';
@@ -245,7 +247,7 @@ $sampleDetailsJs = $useDB ? '{}' : json_encode($sampleDetails, JSON_UNESCAPED_UN
         <!-- Header + Tabs -->
         <div class="px-6 pt-5 pb-4">
             <div class="mb-4">
-                <h2 class="text-xl font-bold" style="color:var(--zm-text-primary)">공통코드 관리</h2>
+                <h2 class="text-xl font-bold" style="color:var(--zm-text-strong)">공통코드 관리</h2>
                 <p class="text-sm mt-1" style="color:var(--zm-text-muted)">모듈별 공통 코드 항목을 관리합니다</p>
             </div>
             <div class="flex items-center gap-1 rounded-xl p-1.5" style="background:var(--zm-surface-1)">
@@ -280,7 +282,7 @@ $sampleDetailsJs = $useDB ? '{}' : json_encode($sampleDetails, JSON_UNESCAPED_UN
                         <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3" style="background:var(--zm-surface-1)">
                             <i data-lucide="mouse-pointer-click" class="w-6 h-6" style="color:var(--zm-text-muted)"></i>
                         </div>
-                        <p class="text-sm font-medium" style="color:var(--zm-text-secondary)">왼쪽에서 코드 그룹을 선택하세요</p>
+                        <p class="text-sm font-medium" style="color:var(--zm-text-default)">왼쪽에서 코드 그룹을 선택하세요</p>
                         <p class="text-xs mt-1" style="color:var(--zm-text-muted)">클릭하면 바로 편집할 수 있습니다</p>
                     </div>
                 </div>
@@ -291,7 +293,7 @@ $sampleDetailsJs = $useDB ? '{}' : json_encode($sampleDetails, JSON_UNESCAPED_UN
                     <!-- Title bar -->
                     <div class="flex items-center justify-between px-5 py-3 flex-shrink-0 border-b" style="border-color:var(--zm-surface-2)">
                         <div class="flex items-center gap-2">
-                            <span id="detailName" class="text-base font-bold" style="color:var(--zm-text-primary)"></span>
+                            <span id="detailName" class="text-base font-bold" style="color:var(--zm-text-strong)"></span>
                             <span id="itemCount" class="text-xs font-medium px-1.5 py-0.5 rounded" style="color:var(--zm-text-muted);background:var(--zm-surface-1)">0개</span>
                         </div>
                         <button id="btnAddItem" class="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-white transition-colors" title="항목 추가">
@@ -301,7 +303,7 @@ $sampleDetailsJs = $useDB ? '{}' : json_encode($sampleDetails, JSON_UNESCAPED_UN
 
                     <!-- Description -->
                     <div class="px-5 py-2 flex-shrink-0">
-                        <input type="text" id="detailDesc" class="w-full text-xs px-2.5 py-1.5 rounded-md border bg-transparent transition-colors" style="border-color:var(--zm-surface-2);color:var(--zm-text-secondary)" placeholder="비고를 입력해주세요">
+                        <input type="text" id="detailDesc" class="w-full text-xs px-2.5 py-1.5 rounded-md border bg-transparent transition-colors" style="border-color:var(--zm-surface-2);color:var(--zm-text-default)" placeholder="비고를 입력해주세요">
                     </div>
 
                     <!-- Items (scrollable) -->
@@ -312,7 +314,7 @@ $sampleDetailsJs = $useDB ? '{}' : json_encode($sampleDetails, JSON_UNESCAPED_UN
                             <div class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style="background:var(--zm-surface-1)">
                                 <i data-lucide="inbox" class="w-6 h-6" style="color:var(--zm-text-muted)"></i>
                             </div>
-                            <p class="text-sm font-medium" style="color:var(--zm-text-primary)">등록된 항목이 없습니다</p>
+                            <p class="text-sm font-medium" style="color:var(--zm-text-strong)">등록된 항목이 없습니다</p>
                             <p class="text-xs mt-1" style="color:var(--zm-text-muted)">"+ 추가" 버튼으로 추가해주세요</p>
                         </div>
                         <?php if (in_array('reservation', $activeModules)): ?>
@@ -445,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             html += `<div class="settings-group-item flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" data-group-id="${g.id}" data-module="${mod}" style="--gi-color:${mStyle.color}">
                 <i data-lucide="${iconName}" class="w-4 h-4 flex-shrink-0" style="color:${mStyle.color}"></i>
-                <span class="gi-name text-[13px] flex-1 truncate" style="color:var(--zm-text-primary)" data-group-name>${esc(g.name)}</span>
+                <span class="gi-name text-[13px] flex-1 truncate" style="color:var(--zm-text-strong)" data-group-name>${esc(g.name)}</span>
                 ${extraIcon}
                 <span class="group-count text-[11px] font-medium px-1.5 py-0.5 rounded-md flex-shrink-0" style="background:var(--zm-surface-1);color:var(--zm-text-muted)">${countText}</span>
             </div>`;
@@ -615,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
             </span>
             <input type="hidden" class="item-code-input" value="${esc(item.code || '')}">
-            <input type="text" value="${esc(item.name)}" class="item-name-input flex-1 min-w-0 rounded-md border transition-colors" style="color:var(--zm-text-primary)" placeholder="항목명">
+            <input type="text" value="${esc(item.name)}" class="item-name-input flex-1 min-w-0 rounded-md border transition-colors" style="color:var(--zm-text-strong)" placeholder="항목명">
             ${maxCountHtml}
             ${refBadgeHtml}
             <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
@@ -927,15 +929,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                     <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-500"></i>
                 </div>
-                <h3 class="text-base font-bold" style="color: var(--zm-text-primary, #1e293b);">저장하지 않은 변경사항</h3>
+                <h3 class="text-base font-bold" style="color: var(--zm-text-strong, #1e293b);">저장하지 않은 변경사항</h3>
             </div>
-            <p class="text-sm leading-relaxed" style="color: var(--zm-text-secondary, #64748b);">변경사항이 저장되지 않았습니다. 어떻게 하시겠습니까?</p>
+            <p class="text-sm leading-relaxed" style="color: var(--zm-text-default, #64748b);">변경사항이 저장되지 않았습니다. 어떻게 하시겠습니까?</p>
         </div>
         <div class="px-6 pb-5 flex flex-col gap-2">
             <button onclick="onUnsavedSaveAndGo()" class="w-full px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:brightness-110 hover:shadow-md active:scale-[0.98] transition-all cursor-pointer">
                 저장하고 이동
             </button>
-            <button onclick="onUnsavedJustGo()" class="w-full px-4 py-2.5 rounded-lg text-sm font-semibold border hover:bg-gray-100 active:scale-[0.98] transition-all cursor-pointer" style="color: var(--zm-text-secondary, #64748b); border-color: var(--zm-border, #e2e8f0);">
+            <button onclick="onUnsavedJustGo()" class="w-full px-4 py-2.5 rounded-lg text-sm font-semibold border hover:bg-gray-100 active:scale-[0.98] transition-all cursor-pointer" style="color: var(--zm-text-default, #64748b); border-color: var(--zm-border, #e2e8f0);">
                 저장하지 않고 이동
             </button>
             <button onclick="hideUnsavedModal()" class="w-full px-4 py-2 text-sm hover:text-gray-700 active:scale-[0.98] transition-all cursor-pointer" style="color: var(--zm-text-muted, #94a3b8);">

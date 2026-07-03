@@ -2,6 +2,8 @@
 $pageTitle = '사업';
 $currentPage = 'business';
 require_once __DIR__ . '/../includes/hr_codes.php';
+require_once __DIR__ . '/../includes/permissions.php';
+requireMenuPermission('business', 'view'); // 접근권한 관리 연동 (admin 항상 통과)
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 

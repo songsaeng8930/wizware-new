@@ -59,6 +59,7 @@ function listMenus(PDO $pdo): void {
         ['key' => 'attendance',            'label' => '근태'],
         ['key' => 'schedule',              'label' => '일정'],
         ['key' => 'approval',              'label' => '전자결재'],
+        ['key' => 'approval_admin',        'label' => '결재 운영 (관리)'],
         ['key' => 'board',                 'label' => '게시판'],
         ['key' => 'hr',                    'label' => '인사관리'],
         ['key' => 'hospital',              'label' => '병원 전용'],

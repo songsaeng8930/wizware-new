@@ -1,6 +1,8 @@
 <?php
 $pageTitle = '계좌 조회';
 $currentPage = 'accounting';
+require_once __DIR__ . '/../includes/permissions.php';
+requireMenuPermission('accounting', 'view'); // 접근권한 관리 연동 (admin 항상 통과)
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 require_once __DIR__ . '/../includes/bank_brand.php';

@@ -2,6 +2,8 @@
 $pageTitle = '재무관리';
 $currentPage = 'accounting';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/permissions.php';
+requireMenuPermission('accounting', 'view'); // 접근권한 관리 연동 (admin 항상 통과)
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/sidebar.php';
 

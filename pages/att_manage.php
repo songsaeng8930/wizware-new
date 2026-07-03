@@ -125,7 +125,7 @@ try {
                     <div class="filter-value">
                         <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
                             <label class="emp-checkbox-label">
-                                <input type="checkbox" name="empType" value="" checked class="emp-checkbox"> <span>전체</span>
+                                <input type="checkbox" name="empType" value="" class="emp-checkbox"> <span>전체</span>
                             </label>
                             <?php foreach ($empTypes as $t): ?>
                             <label class="emp-checkbox-label">
@@ -511,6 +511,25 @@ try {
         document.querySelectorAll('#filterDivision, #filterDepartment, #filterPosition').forEach(sel => {
             sel.addEventListener('change', applyFilters);
         });
+
+        // 고용형태·고용상태: "전체"와 개별 항목 상호배타 처리
+        ['empType', 'empStatus'].forEach(wireEmpAllToggle);
+    }
+
+    // "전체" 체크 시 개별 해제, 개별 체크 시 "전체" 해제, 아무것도 없으면 "전체" 자동 선택
+    function wireEmpAllToggle(groupName) {
+        const boxes = [...document.querySelectorAll(`input[name="${groupName}"]`)];
+        const allBox = boxes.find(cb => cb.value === '');
+        const specifics = boxes.filter(cb => cb.value !== '');
+        boxes.forEach(cb => cb.addEventListener('change', function () {
+            if (this.value === '') {
+                if (this.checked) specifics.forEach(c => (c.checked = false));
+                else if (!specifics.some(c => c.checked)) this.checked = true; // 최소 하나 유지
+            } else {
+                if (this.checked && allBox) allBox.checked = false;
+                if (allBox && !specifics.some(c => c.checked)) allBox.checked = true;
+            }
+        }));
     }
 
     // 외부 onclick에서 호출 가능하도록 window에 노출 ─ IIFE 스코프 회피

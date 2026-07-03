@@ -2,6 +2,8 @@
 $__viewMode = ($_GET['mode'] ?? '') === 'view';
 $pageTitle = '조직도';
 $currentPage = $__viewMode ? 'company' : 'hr';
+require_once __DIR__ . '/../includes/permissions.php';
+requireMenuPermission('hr', 'view'); // 접근권한 관리 연동 (admin 항상 통과)
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 require_once __DIR__ . '/../config/database.php';

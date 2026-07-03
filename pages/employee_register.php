@@ -1,6 +1,8 @@
 <?php
 $pageTitle = '직원 상세';
 $currentPage = 'hr';
+require_once __DIR__ . '/../includes/permissions.php';
+requireMenuPermission('hr', 'view'); // 접근권한 관리 연동 (admin 항상 통과)
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 require_once __DIR__ . '/../config/database.php';
@@ -581,7 +583,7 @@ require_once __DIR__ . '/../includes/card_helpers.php';
             <p id="deleteTargetName" class="text-sm font-medium text-[var(--zm-text-default)] mb-3"></p>
             <div id="deleteLinksList" class="hidden mb-4">
                 <p class="text-sm font-medium text-rose-500 mb-2">이 직원과 연결된 데이터가 있습니다:</p>
-                <ul id="deleteLinksUl" class="space-y-1 text-sm text-[var(--zm-text-sub)]"></ul>
+                <ul id="deleteLinksUl" class="space-y-1 text-sm text-[var(--zm-text-subtle)]"></ul>
                 <div class="mt-3 p-3 rounded-lg border emp-delete-warn">
                     <p class="text-sm">
                         <strong>삭제할 수 없습니다.</strong> 연결된 데이터가 있는 직원은 기본정보 탭에서 재직상태를 "퇴사"로 변경해주세요. 퇴사 처리하면 목록에서 숨겨지지만 기록은 보존됩니다.
@@ -589,7 +591,7 @@ require_once __DIR__ . '/../includes/card_helpers.php';
                 </div>
             </div>
             <div id="deleteNoLinks" class="hidden mb-4">
-                <p class="text-sm text-[var(--zm-text-sub)]">연결된 급여·결재·근태 데이터가 없습니다. 삭제하면 직원 목록에서 제거됩니다.</p>
+                <p class="text-sm text-[var(--zm-text-subtle)]">연결된 급여·결재·근태 데이터가 없습니다. 삭제하면 직원 목록에서 제거됩니다.</p>
             </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">

@@ -3,6 +3,8 @@ $pageTitle = '결재양식관리';
 $currentPage = 'approval_admin';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/approval_form_templates.php';
+require_once __DIR__ . '/../includes/permissions.php';
+requireMenuPermission('approval_admin', 'view'); // 접근권한 관리 연동 (admin 항상 통과)
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/sidebar.php';
 
@@ -351,7 +353,7 @@ function submitUploadModal() {
 <!-- 외부 업로드 모달 -->
 <div id="uploadModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
     <div class="absolute inset-0 bg-black/50" onclick="closeUploadModal()"></div>
-    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 mx-4" style="background:var(--zm-surface-1);border:1px solid var(--zm-border-default)">
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 mx-4" style="background:var(--zm-surface-1);border:1px solid var(--zm-border)">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-bold" style="color:var(--zm-text-strong)">외부 양식 업로드</h3>
             <button onclick="closeUploadModal()" class="p-1 rounded-lg hover:bg-slate-100" style="color:var(--zm-text-muted)">
@@ -368,7 +370,7 @@ function submitUploadModal() {
         </div>
 
         <div class="rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-colors"
-             style="border-color:var(--zm-border-default);background:var(--zm-surface-2)"
+             style="border-color:var(--zm-border);background:var(--zm-surface-2)"
              ondrop="handleUploadDrop(event)"
              ondragover="handleUploadDragOver(event)"
              ondragleave="handleUploadDragLeave(event)"
@@ -383,7 +385,7 @@ function submitUploadModal() {
         <p id="uploadModalStatus" class="text-xs mt-2"></p>
 
         <div class="flex justify-end gap-2 mt-5">
-            <button type="button" onclick="closeUploadModal()" class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors" style="border-color:var(--zm-border-default);color:var(--zm-text-default)">취소</button>
+            <button type="button" onclick="closeUploadModal()" class="px-4 py-2 text-sm font-medium rounded-lg border transition-colors" style="border-color:var(--zm-border);color:var(--zm-text-default)">취소</button>
             <button type="button" id="uploadModalSubmit" onclick="submitUploadModal()" disabled class="px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">업로드</button>
         </div>
     </div>

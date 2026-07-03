@@ -78,7 +78,7 @@ $divisions = [
 .settle-badge-ok { background:var(--zm-success-bg); color:var(--zm-success-fg); }
 .settle-badge-warn { background:var(--zm-amber-bg); color:var(--zm-amber-fg); }
 .settle-comp-ok { border-color:var(--zm-status-ok-fg); color:var(--zm-status-ok-fg); }
-.settle-comp-warn { border-color:var(--zm-status-warning-fg, #d97706); color:var(--zm-status-warning-fg, #d97706); }
+.settle-comp-warn { border-color:var(--zm-st-warning-fg, #d97706); color:var(--zm-st-warning-fg, #d97706); }
 .settle-comp-bad { border-color:var(--zm-status-danger-fg); color:var(--zm-status-danger-fg); }
 .settle-comp-default { border-color:var(--zm-border); color:var(--zm-text-muted); }
 </style>
