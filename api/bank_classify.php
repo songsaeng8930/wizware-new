@@ -17,6 +17,8 @@
 require_once __DIR__ . '/../includes/api_auth.php';
 require_once __DIR__ . '/../includes/api_common.php';
 require_once __DIR__ . '/../includes/bank/classify.php';
+require_once __DIR__ . '/../includes/bank/learn.php';   // 1층 학습 루프
+require_once __DIR__ . '/../includes/bank/rag.php';     // 2층 검색기반 제안
 require_once __DIR__ . '/../config/database.php';
 
 $action = $_GET['action'] ?? '';
@@ -65,9 +67,12 @@ try {
             if (!is_array($items) || !$items) apiError('BAD_INPUT', '확정할 항목이 없습니다.', 400);
 
             $catMap = bank_category_map();
-            $updated = 0;
+            $actor = (string)($GLOBALS['currentUserName'] ?? $GLOBALS['currentUserId'] ?? 'user');
+            $updated = 0; $learned = 0;
             $pdo->beginTransaction();
             try {
+                // 확정 전 거래 상태 조회(학습 근거: 적요·거래처·이전 제안코드)
+                $sel = $pdo->prepare("SELECT id, description, tx_type, counterparty, account_code FROM bank_transactions WHERE id = ?");
                 $upd = $pdo->prepare(
                     "UPDATE bank_transactions
                      SET account_code = ?, account_name = ?, is_confirmed = 1
@@ -77,15 +82,28 @@ try {
                     $id   = (int)($it['id'] ?? 0);
                     $code = trim((string)($it['code'] ?? ''));
                     if ($id <= 0 || $code === '' || !isset($catMap[$code])) continue;
+
+                    $sel->execute([$id]);
+                    $tx = $sel->fetch(PDO::FETCH_ASSOC);
+                    if (!$tx) continue;
+
                     $upd->execute([$code, $catMap[$code], $id]);
                     $updated += $upd->rowCount();
+
+                    // 사람 확정 → 학습(패턴 강화/생성 + 이력)
+                    try {
+                        bank_learn_from_confirmation($pdo, $tx, $code, $catMap[$code], $actor);
+                        $learned++;
+                    } catch (Throwable $le) {
+                        error_log('[bank_classify] 학습 실패(무시): ' . $le->getMessage());
+                    }
                 }
                 $pdo->commit();
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
                 throw $e;
             }
-            apiOk(['updated' => $updated]);
+            apiOk(['updated' => $updated, 'learned' => $learned]);
         }
 
         // ─── 미확정 거래 규칙기반 재분류(제안만 갱신) ───
@@ -97,24 +115,32 @@ try {
 
             $where = 'WHERE is_confirmed = 0'; $args = [];
             if ($accountId > 0) { $where .= ' AND account_id = ?'; $args[] = $accountId; }
-            $rows = $pdo->prepare("SELECT id, description, tx_type FROM bank_transactions $where");
+            $rows = $pdo->prepare("SELECT id, description, tx_type, counterparty FROM bank_transactions $where");
             $rows->execute($args);
 
-            $changed = 0;
+            $changed = 0; $bySource = ['learned' => 0, 'rule' => 0, 'rag' => 0];
             $pdo->beginTransaction();
             try {
                 $upd = $pdo->prepare("UPDATE bank_transactions SET account_code = ?, account_name = ?, ai_confidence = ? WHERE id = ?");
                 foreach ($rows->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                    $c = bank_classify_one((string)$r['description'], (string)$r['tx_type']);
+                    // 학습규칙 → 정적규칙 (smart)
+                    $c = bank_classify_smart($pdo, (string)$r['description'], (string)$r['tx_type'], (string)$r['counterparty']);
+                    // 저신뢰(신규·모호)면 검색기반 RAG 제안이 더 나은지 확인
+                    if ((int)$c['confidence'] < 60) {
+                        $rag = bank_rag_suggest($pdo, $r);
+                        if ($rag && (int)$rag['confidence'] > (int)$c['confidence']) $c = $rag;
+                    }
                     $upd->execute([$c['code'], $c['name'], (int)$c['confidence'], (int)$r['id']]);
                     $changed += $upd->rowCount();
+                    $src = $c['source'] ?? 'rule';
+                    if (isset($bySource[$src])) $bySource[$src]++;
                 }
                 $pdo->commit();
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
                 throw $e;
             }
-            apiOk(['reclassified' => $changed]);
+            apiOk(['reclassified' => $changed, 'by_source' => $bySource]);
         }
 
         default:
