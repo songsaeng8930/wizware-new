@@ -5581,8 +5581,17 @@ html[data-theme="light"] .biz-segment-group .peer:checked + .zm-radio {
     flex: 1;
     border-radius: 3px;
     background: var(--zm-surface-3, #e2e8f0);
-    transition: background 0.3s ease;
+    transition: background 0.35s ease;
 }
+/* 좌→우 순차적으로 차오르는 느낌의 지연 */
+.pf-completeness-segment:nth-child(1) { transition-delay: 0s; }
+.pf-completeness-segment:nth-child(2) { transition-delay: 0.05s; }
+.pf-completeness-segment:nth-child(3) { transition-delay: 0.10s; }
+.pf-completeness-segment:nth-child(4) { transition-delay: 0.15s; }
+.pf-completeness-segment:nth-child(5) { transition-delay: 0.20s; }
+.pf-completeness-segment:nth-child(6) { transition-delay: 0.25s; }
+.pf-completeness-segment:nth-child(7) { transition-delay: 0.30s; }
+.pf-completeness-segment:nth-child(8) { transition-delay: 0.35s; }
 .pf-completeness-segment.filled {
     background: var(--zm-primary);
 }

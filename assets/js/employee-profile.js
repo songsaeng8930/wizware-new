@@ -428,10 +428,14 @@
         var emptyNames = [];
         SECTION_ORDER.forEach(function (k) {
             var cnt = sectionCounts[k] || 0;
-            var seg = barEl.querySelector('[data-segment="' + k + '"]');
-            if (seg) seg.classList.toggle('filled', cnt > 0);
             if (cnt > 0) filled++; else emptyNames.push(SECTION_LABELS[k]);
         });
+
+        // 채운 개수만큼 왼쪽부터 순서대로 채운다(중간 빈칸 없이 좌→우로 차오름).
+        var segs = barEl.querySelectorAll('.pf-completeness-segment');
+        for (var i = 0; i < segs.length; i++) {
+            segs[i].classList.toggle('filled', i < filled);
+        }
 
         var pct = Math.round((filled / SECTION_ORDER.length) * 100);
         pctEl.textContent = pct + '%';
