@@ -4,7 +4,8 @@ $currentPage = 'attendance';
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 require_once __DIR__ . '/../includes/permissions.php';
-requireMenuPermission('attendance.manage', 'view');
+// 부서 근태현황은 로그인한 전 직원이 열람 가능 (로그인 강제는 header.php의 requireLogin).
+// 관리자 전용 '근태 관리'(att_manage.php)와 구분 — 관리자 가드 제거.
 
 $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('m');
@@ -186,17 +187,19 @@ html[data-theme="dark"] .att-tag-absent   { background: rgba(127,29,29,0.3); col
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
                 </button>
-                <h2 class="text-lg font-bold text-slate-100">근태 관리</h2>
+                <h2 class="text-lg font-bold text-slate-100">부서 근태현황</h2>
             </div>
             <div class="flex items-center gap-2">
-                <a href="dept_attendance.php" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary border border-primary rounded-lg transition-colors">
+                <a href="attendance.php" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary border border-primary rounded-lg transition-colors">
                     <i data-lucide="calendar-check" class="w-3 h-3"></i>
-                    근태현황
+                    근태 현황
                 </a>
+                <?php if (in_array(getCurrentUserRole(), ['admin', 'manager'], true)): ?>
                 <a href="att_manage.php" class="btn btn-secondary">
                     <i data-lucide="settings" class="w-3 h-3"></i>
                     근태관리
                 </a>
+                <?php endif; ?>
             </div>
         </div>
 

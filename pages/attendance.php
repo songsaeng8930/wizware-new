@@ -310,16 +310,18 @@ $vacationCreated = [
         <h2 class="text-lg font-bold text-slate-100">근태 현황</h2>
         <p class="text-sm text-slate-500"><?= $year ?>년 <?= $monthNames[$month] ?> · 나의 출퇴근 및 휴가 기록</p>
     </div>
-    <?php if (in_array(getCurrentUserRole(), ['admin', 'manager'], true)): ?>
     <div class="flex items-center gap-2">
+        <!-- 부서 근태: 로그인한 전 직원 열람 가능 -->
         <a href="dept_attendance.php" class="btn btn-secondary">
             <i data-lucide="users" class="w-4 h-4"></i>부서 근태
         </a>
+        <!-- 근태 관리: 관리자/매니저 전용 -->
+        <?php if (in_array(getCurrentUserRole(), ['admin', 'manager'], true)): ?>
         <a href="att_manage.php" class="btn btn-secondary">
             <i data-lucide="settings" class="w-4 h-4"></i>근태 관리
         </a>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
 </div>
 
 <!-- Clock Card (shadcn Card) -->
