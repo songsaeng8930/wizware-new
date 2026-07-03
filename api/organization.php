@@ -150,18 +150,43 @@ function createDepartment(PDO $pdo): void
         }
     }
 
-    $stmt = $pdo->prepare('
-        INSERT INTO departments (parent_id, name, code, sort_order)
-        VALUES (:parent_id, :name, :code, :sort_order)
-    ');
-    $stmt->execute([
-        'parent_id' => $data['parent_id'] ?: null,
-        'name' => $name,
-        'code' => $data['code'] ?? null,
-        'sort_order' => (int)($data['sort_order'] ?? 0),
-    ]);
+    // 배치할 구성원 (양수 정수만, 중복 제거)
+    $memberIds = array_values(array_unique(array_filter(
+        array_map('intval', (array)($data['member_ids'] ?? [])),
+        fn($v) => $v > 0
+    )));
 
-    respond(201, ['id' => (int)$pdo->lastInsertId(), 'message' => '부서가 등록되었습니다.']);
+    $pdo->beginTransaction();
+    try {
+        $stmt = $pdo->prepare('
+            INSERT INTO departments (parent_id, name, code, sort_order)
+            VALUES (:parent_id, :name, :code, :sort_order)
+        ');
+        $stmt->execute([
+            'parent_id' => $data['parent_id'] ?: null,
+            'name' => $name,
+            'code' => $data['code'] ?? null,
+            'sort_order' => (int)($data['sort_order'] ?? 0),
+        ]);
+        $newId = (int)$pdo->lastInsertId();
+
+        // 선택한 구성원을 새 부서로 이동 (직원=부서 1:1)
+        $movedCount = 0;
+        if ($memberIds) {
+            $ph = implode(',', array_fill(0, count($memberIds), '?'));
+            $upd = $pdo->prepare("UPDATE employees SET department_id = ? WHERE id IN ($ph) AND is_active = 1");
+            $upd->execute(array_merge([$newId], $memberIds));
+            $movedCount = $upd->rowCount();
+        }
+
+        $pdo->commit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        error_log('createDepartment failed: ' . $e->getMessage());
+        respond(500, ['error' => '부서 등록 중 오류가 발생했습니다.']);
+    }
+
+    respond(201, ['id' => $newId, 'moved' => $movedCount, 'message' => '부서가 등록되었습니다.']);
 }
 
 function updateDepartment(PDO $pdo): void

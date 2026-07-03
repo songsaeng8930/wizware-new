@@ -204,6 +204,49 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.classList.remove('hidden');
     }
 
+    // === 구성원 배치 피커 (신규 부서 생성 시) ===
+    function setupMemberPicker() {
+        const wrap = document.getElementById('deptMemberAssign');
+        const listEl = document.getElementById('memberCheckboxList');
+        const searchEl = document.getElementById('memberSearchInput');
+        const countEl = document.getElementById('memberSelectedCount');
+        if (!wrap || !listEl) return;
+        wrap.classList.remove('hidden');
+        if (searchEl) searchEl.value = '';
+
+        const deptNameOf = (id) => {
+            const d = allDepartments.find(x => x.id == id);
+            return d ? d.name : '미배정';
+        };
+        const members = allEmployees.slice()
+            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ko'));
+
+        listEl.innerHTML = members.length ? members.map(emp =>
+            '<label class="member-row flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 cursor-pointer" data-name="' + escapeHtml(emp.name || '') + '">' +
+                '<input type="checkbox" name="member_ids" value="' + emp.id + '" class="rounded border-gray-300 text-primary focus:ring-primary">' +
+                '<span class="text-sm text-gray-700">' + escapeHtml(emp.name || '') + '</span>' +
+                '<span class="text-xs text-gray-400 ml-auto">' + escapeHtml(deptNameOf(emp.department_id)) + '</span>' +
+            '</label>'
+        ).join('') : '<p class="text-xs text-gray-400 px-2 py-2">직원이 없습니다</p>';
+
+        const updateCount = () => {
+            const n = listEl.querySelectorAll('input[name="member_ids"]:checked').length;
+            if (countEl) countEl.textContent = n + '명 선택됨';
+        };
+        listEl.onchange = updateCount;
+        updateCount();
+
+        if (searchEl) {
+            searchEl.oninput = () => {
+                const q = searchEl.value.trim().toLowerCase();
+                listEl.querySelectorAll('.member-row').forEach(row => {
+                    const name = (row.getAttribute('data-name') || '').toLowerCase();
+                    row.classList.toggle('hidden', q !== '' && !name.includes(q));
+                });
+            };
+        }
+    }
+
     // === 부서 모달 ===
     function showDeptModal(dept = null) {
         const modal = document.getElementById('deptModal');
@@ -259,15 +302,49 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</label>';
                 }).join('');
             }
+            document.getElementById('deptMemberAssign').classList.add('hidden');
         } else {
             detailSection.classList.add('hidden');
             pathRow.classList.add('hidden');
+            setupMemberPicker();
         }
 
         // 상위 조직 hidden input 동기화
         function setParent(parentId) {
             currentParentId = parentId != null ? parseInt(parentId) : null;
             document.getElementById('deptParent').value = currentParentId || '';
+
+            // 상위 부서 표시 (최상위 → 선택 브레드크럼)
+            const parentBox = document.getElementById('deptParentDisplay');
+            if (parentBox) {
+                if (currentParentId) {
+                    const chain = getAncestorChain(currentParentId).reverse();
+                    parentBox.innerHTML = chain.map((id, i) =>
+                        '<span class="text-sm ' + (i === chain.length - 1 ? 'font-semibold text-gray-800' : 'text-gray-400') + '">' +
+                        escapeHtml(deptNameById(id)) + '</span>'
+                    ).join('<span class="mx-1 text-gray-300">/</span>');
+                } else {
+                    parentBox.innerHTML = '<span class="text-sm text-gray-500">최상위 조직 (상위 없음)</span>';
+                }
+            }
+
+            // 조직 유형 표시 (깊이 기반 자동 결정)
+            const levelBox = document.getElementById('deptLevelDisplay');
+            if (levelBox) {
+                const depthIdx = currentParentId ? getAncestorChain(currentParentId).length : 0;
+                const lvl = enabledLevels[depthIdx];
+                if (lvl) {
+                    levelBox.className = 'text-sm font-semibold text-gray-800';
+                    levelBox.textContent = lvl.label;
+                } else if (!enabledLevels.length) {
+                    levelBox.className = 'text-sm text-gray-400';
+                    levelBox.textContent = '상위 부서를 선택하면 자동 결정됩니다';
+                } else {
+                    levelBox.className = 'text-sm text-rose-500';
+                    levelBox.textContent = '최대 조직 단계를 초과합니다';
+                }
+            }
+
             renderTree(document.getElementById('deptTreeSearch').value);
             if (dept) {
                 const pathEl = document.getElementById('deptDetailPath');
@@ -442,7 +519,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         ? `<span class="ml-auto text-[10px] text-white/70 font-normal flex-shrink-0">상위</span>`
                         : '';
                     row.innerHTML = `<span class="truncate flex-1">${escapeHtml(d.name)}</span>${badge}`;
-                    row.addEventListener('click', () => { if (!isDragging && !dragOccurred) showDeptModal(d); });
+                    row.addEventListener('click', () => {
+                        if (isDragging || dragOccurred) return;
+                        if (editId == null) setParent(d.id);   // 추가 모드: 클릭 = 상위 부서 지정
+                        else showDeptModal(d);                  // 수정 모드: 클릭 = 해당 부서로 전환
+                    });
                 }
                 row.addEventListener('pointerdown', e => {
                     if (e.button !== 0 || isDragging || pendingDrag) return;
@@ -737,7 +818,11 @@ document.addEventListener('DOMContentLoaded', function() {
             rootRow.dataset.dlDepth = '0';
             const rootBadge = isRootParent ? '<span class="ml-auto text-[10px] text-white/70 font-normal flex-shrink-0">상위</span>' : '';
             rootRow.innerHTML = '<span class="truncate flex-1">' + escapeHtml(root.name) + '</span>' + rootBadge;
-            rootRow.addEventListener('click', () => { if (!isDragging && !dragOccurred) showDeptModal(root); });
+            rootRow.addEventListener('click', () => {
+                if (isDragging || dragOccurred) return;
+                if (editId == null) setParent(root.id);   // 추가 모드: 클릭 = 상위 부서 지정
+                else showDeptModal(root);                  // 수정 모드: 클릭 = 해당 부서로 전환
+            });
             rootRow.addEventListener('pointerdown', e => {
                 if (e.button !== 0 || isDragging || pendingDrag) return;
                 pendingDrag = { deptId: root.id, deptName: root.name, row: rootRow, startX: e.clientX, startY: e.clientY };
@@ -1060,6 +1145,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 sort_order: sortOrder,
             };
 
+            // 신규 부서: 선택한 구성원 ID 수집 (수정 모드에는 없음)
+            if (!id) {
+                const memberChecks = document.querySelectorAll('#memberCheckboxList input[name="member_ids"]:checked');
+                data.member_ids = Array.from(memberChecks).map(cb => parseInt(cb.value));
+            }
+
             if (!data.name) { alert(((ORG_LABELS.department||{}).label||'부서') + '명을 입력해주세요.'); return; }
 
             if (useDB) {
@@ -1072,7 +1163,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify(data)
                 })
                 .then(r => {
-                    if (!r.ok) return r.text().then(t => { throw new Error(t || `HTTP ${r.status}`); });
+                    if (!r.ok) return r.text().then(t => {
+                        let msg = t;
+                        try { const j = JSON.parse(t); if (j && j.error) msg = j.error; } catch (e) {}
+                        throw new Error(msg || `HTTP ${r.status}`);
+                    });
                     return r.json();
                 })
                 .then(result => {
@@ -1084,6 +1179,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         const newId = result.id || (Math.max(...allDepartments.map(d => d.id), 0) + 1);
                         data.id = newId;
                         allDepartments.push(data);
+                        // 선택한 구성원을 새 부서로 이동 (로컬 상태 반영)
+                        if (Array.isArray(data.member_ids) && data.member_ids.length) {
+                            allEmployees.forEach(emp => {
+                                if (data.member_ids.includes(parseInt(emp.id))) emp.department_id = newId;
+                            });
+                        }
                     }
                     allEmployees.forEach(emp => {
                         if (emp.department_id == (id || data.id)) {
@@ -1096,7 +1197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(err => {
                     console.error('부서 저장 실패:', err);
-                    showToast('저장 중 오류가 발생했습니다', 'error');
+                    showToast(err.message || '저장 중 오류가 발생했습니다', 'error');
                 })
                 .finally(() => {
                     if (btn) { btn.disabled = false; btn.textContent = '저장'; }

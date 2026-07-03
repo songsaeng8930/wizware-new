@@ -154,6 +154,12 @@ $formTemplates = approval_form_templates();
 <link rel="stylesheet" href="<?= $basePath ?>/assets/editor/editor.css">
 <script src="<?= $basePath ?>/assets/editor/editor.js"></script>
 <style>
+/* 사용 가능 부서 칩 선택 상태 (CDN Tailwind가 has-[:checked] 변형을 컴파일하지 않는 경우 대비) */
+#deptCheckboxes label.is-selected {
+    border-color: var(--zm-primary);
+    background: var(--zm-primary-tint-12);
+    color: var(--zm-primary);
+}
 /* 템플릿 카드 / 외부 업로드 */
 .approval-template-sidebar { box-shadow: var(--zm-card-shadow); }
 .approval-import-box { transition: border-color .15s, background-color .15s; }
@@ -361,6 +367,19 @@ function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&
 document.addEventListener('DOMContentLoaded', () => {
     renderTemplateList();
     initFormEditor();
+
+    // 사용 가능 부서 칩: 체크 상태를 라벨 색으로 표시 (초기값 + 클릭 토글)
+    const deptWrap = document.getElementById('deptCheckboxes');
+    if (deptWrap) {
+        const syncChip = (cb) => {
+            const label = cb.closest('label');
+            if (label) label.classList.toggle('is-selected', cb.checked);
+        };
+        deptWrap.querySelectorAll('input[name="allowed_dept"]').forEach(syncChip);
+        deptWrap.addEventListener('change', (e) => {
+            if (e.target && e.target.name === 'allowed_dept') syncChip(e.target);
+        });
+    }
 
     const imported = sessionStorage.getItem('importedForm');
     if (imported) {

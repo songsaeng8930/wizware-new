@@ -488,10 +488,12 @@
                 const color = FLOW_COLOR[f.action] || FLOW_COLOR['대기'];
                 const time = f.action !== '대기' && f.action_date ? ' · ' + relTime(f.action_date) : '';
                 const arrow = i < data.approval_flow.length - 1 ? '<span class="ax-arrow">→</span>' : '';
+                // 표시 라벨만 변경 (저장값 '건너뜀'은 유지) — 상위 반려/전결로 차례가 오지 않은 단계
+                const actLabel = f.action === '건너뜀' ? '미진행' : f.action;
                 return `<div class="ax-step">
                     <span class="ax-dot" style="background:${color}"></span>
                     <span class="ax-name">${esc(f.approver_name)}</span>
-                    <span class="ax-status" style="color:${color}">${esc(f.action)}${time}</span>
+                    <span class="ax-status" style="color:${color}">${esc(actLabel)}${time}</span>
                 </div>${arrow}`;
             }).join('');
             html += `<div class="ax-flow">${steps}</div>`;

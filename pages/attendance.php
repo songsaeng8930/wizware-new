@@ -116,6 +116,11 @@ if (empty($workTypes)) {
 }
 $workTypeNames = array_column($workTypes, 'name');
 
+// 근무유형 코드 → 한글 이름 (배지 표시용, NRM 포함)
+$workTypeNameMap = ['NRM' => '정상근무'];
+foreach ($workTypes as $wt) { $workTypeNameMap[$wt['code']] = $wt['name']; }
+$workTypeNameMap += ['WFH' => '재택근무', 'OUT' => '외근', 'BIZ' => '출장', 'OT' => '야근', 'HOL' => '휴일근무'];
+
 // 휴가유형 (공통코드 → fallback)
 $leaveTypeOptions = getCommonCodeOptions('attendance', '휴가유형');
 if ($leaveTypeOptions === '') {
@@ -518,7 +523,7 @@ $totalRows = (int)ceil($totalCells / 7);
 
                 <div class="flex flex-wrap gap-1">
                     <?php if (!empty($rec['work_type'])): ?>
-                        <span class="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-700"><?= esc($rec['work_type']) ?></span>
+                        <span class="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-700"><?= esc($workTypeNameMap[$rec['work_type']] ?? $rec['work_type']) ?></span>
                     <?php endif; ?>
                     <?php foreach ($outs as $o): ?>
                         <span class="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-amber-100 text-amber-700"
@@ -1226,6 +1231,7 @@ $totalRows = (int)ceil($totalCells / 7);
 <script>
 (function() {
     var API = '<?= $basePath ?>/api/attendance.php';
+    var WORK_TYPE_NAMES = <?= json_encode($workTypeNameMap, JSON_UNESCAPED_UNICODE) ?>;
     // 서버 측 attendance API는 이미 세션에서 employee_id를 강제하므로, 프론트에서 넘기는 값은
     // admin/manager의 경우를 제외하면 무시된다. 그래도 UI 표시용으로 세션 사용자 id를 주입한다.
     var EMP_ID = <?= (int)($_SESSION['user_id'] ?? 0) ?>;
@@ -1422,7 +1428,7 @@ $totalRows = (int)ceil($totalCells / 7);
     }
 
     // 편집 가능한 섹션 HTML 빌더 · 값 없어도 "작성" 버튼 표시
-    function renderEditableSection(field, label, icon, value) {
+    function renderEditableSection(field, label, value) {
         var hasValue = value !== null && value !== undefined && String(value).trim() !== '';
         var placeholder = (field === 'work_plan')
             ? '오늘 처리할 업무 계획…'
@@ -1434,7 +1440,7 @@ $totalRows = (int)ceil($totalCells / 7);
         return ''
             + '<section data-section="' + field + '">'
             +   '<div class="flex items-center justify-between mb-1.5">'
-            +     '<h4 class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">' + icon + ' ' + esc(label) + '</h4>'
+            +     '<h4 class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">' + esc(label) + '</h4>'
             +     '<button type="button" class="det-edit-btn inline-flex items-center gap-1 text-[11px] text-gray-600 hover:underline" data-field="' + field + '">'
             +       '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
             +       (hasValue ? '수정' : '작성')
@@ -1483,15 +1489,15 @@ $totalRows = (int)ceil($totalCells / 7);
         );
 
         // 오늘의 업무 / 특이사항 · 값 없어도 섹션 항상 렌더 (수정/작성 버튼 노출)
-        rows.push(renderEditableSection('work_plan',  '오늘의 업무', '🗒', d.work_plan));
-        rows.push(renderEditableSection('leave_note', '특이사항',    '📝', d.leave_note));
+        rows.push(renderEditableSection('work_plan',  '오늘의 업무', d.work_plan));
+        rows.push(renderEditableSection('leave_note', '특이사항',    d.leave_note));
 
         // 근무유형
         if (d.work_type) {
             rows.push(
                 '<div class="flex items-center gap-2 text-sm">' +
                     '<span class="text-slate-500">근무 유형</span>' +
-                    '<span class="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-700">' + esc(d.work_type) + '</span>' +
+                    '<span class="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-700">' + esc(WORK_TYPE_NAMES[d.work_type] || d.work_type) + '</span>' +
                     (d.note ? '<span class="text-slate-400">· ' + esc(d.note) + '</span>' : '') +
                 '</div>'
             );

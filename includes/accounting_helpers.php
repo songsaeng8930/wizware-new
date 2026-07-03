@@ -22,10 +22,11 @@ const ACCRUAL_VAT_OUT_CODE = '25500'; // 부가세예수금
 
 function tableExists(PDO $pdo, string $table): bool
 {
+    // information_schema 사용 — "SHOW TABLES LIKE ?" 는 EMULATE_PREPARES=false 환경에서 prepare 시 1064 에러 → 항상 false 반환되던 버그
     try {
-        $stmt = $pdo->prepare("SHOW TABLES LIKE ?");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?");
         $stmt->execute([$table]);
-        return $stmt->rowCount() > 0;
+        return (int)$stmt->fetchColumn() > 0;
     } catch (\Throwable $e) {
         return false;
     }

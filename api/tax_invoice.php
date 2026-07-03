@@ -832,10 +832,11 @@ function getMatchStatus(PDO $pdo): void
     $status   = $_GET['status'] ?? 'all';
 
     $allTablesExist = true;
+    // information_schema 사용 — "SHOW TABLES LIKE ?" 는 EMULATE_PREPARES=false 환경에서 prepare 시 1064 에러
+    $chk = $pdo->prepare("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?");
     foreach (['invoice_bank_mappings', 'bank_transactions', 'bank_accounts'] as $tbl) {
-        $chk = $pdo->prepare("SHOW TABLES LIKE ?");
         $chk->execute([$tbl]);
-        if (!$chk->rowCount()) {
+        if (!(int)$chk->fetchColumn()) {
             $allTablesExist = false;
             break;
         }

@@ -115,9 +115,6 @@ foreach ($allEmployees as $emp) {
 ?>
 
 <style>
-.division-chip { background: var(--zm-chip-bg, rgba(51,65,85,0.6)); color: var(--zm-text-secondary, #94a3b8); border: 1px solid transparent; }
-.division-chip:hover { background: var(--zm-chip-bg, rgba(51,65,85,0.8)); color: var(--zm-text-primary, #e2e8f0); }
-.division-chip.active { background: var(--zm-primary); color: #fff; border-color: var(--zm-primary); }
 
 .att-day-table { width: 100%; border-collapse: collapse; font-size: 12px !important; line-height: 1 !important; }
 .att-day-table thead th {
@@ -225,19 +222,6 @@ html[data-theme="dark"] .att-tag-absent   { background: rgba(127,29,29,0.3); col
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
                 </a>
-            </div>
-
-            <!-- 조직 필터 -->
-            <div class="flex items-center justify-center gap-2 mb-4" id="divisionFilterWrap">
-                <button class="division-chip active px-3 py-1.5 text-sm font-medium rounded-full transition-colors" data-div="">전체</button>
-                <?php
-                $divisions = array_values(array_unique(array_filter(array_column($timeEmployees, 'division'))));
-                sort($divisions);
-                foreach ($divisions as $div):
-                ?>
-                <button class="division-chip px-3 py-1.5 text-sm font-medium rounded-full transition-colors"
-                        data-div="<?= htmlspecialchars($div, ENT_QUOTES) ?>"><?= htmlspecialchars($div) ?></button>
-                <?php endforeach; ?>
             </div>
 
             <!-- 필터 바 -->
@@ -579,20 +563,6 @@ function clearEmpFilter() {
     applyFilter();
 }
 
-function filterByDivision(div) {
-    activeFilterDivision = div;
-    document.querySelectorAll('.division-chip').forEach(chip => {
-        chip.classList.toggle('active', chip.dataset.div === div);
-    });
-    updateDeptOptions();
-    applyFilter();
-}
-
-document.getElementById('divisionFilterWrap').addEventListener('click', function(e) {
-    const chip = e.target.closest('.division-chip');
-    if (chip) filterByDivision(chip.dataset.div);
-});
-
 // 상태 필터 칩 이벤트
 document.getElementById('statusFilterWrap').addEventListener('click', function(e) {
     const chip = e.target.closest('.status-chip');
@@ -648,7 +618,6 @@ function resetAllFilters() {
     activeFilterStatus = '';
     document.getElementById('empSearchInput').value = '';
     document.getElementById('deptFilter').value = '';
-    document.querySelectorAll('.division-chip').forEach(c => c.classList.toggle('active', c.dataset.div === ''));
     document.querySelectorAll('.status-chip').forEach(c => c.classList.toggle('active', c.dataset.status === ''));
     updateDeptOptions();
     applyFilter();
