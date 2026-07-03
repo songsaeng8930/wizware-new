@@ -173,6 +173,8 @@ $dangerCount = count(array_filter($transactions, fn($t) => !empty($t['account_co
                                             AI 분류 신뢰도가 낮아요 (<?= $conf ?>%)<br>계정과목이 맞는지 한 번 확인해주세요
                                         </span>
                                     </span>
+                                    <?php else: ?>
+                                    <span class="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true"></span><!-- 아이콘 자리 예약 · 열 정렬 고정 -->
                                     <?php endif; ?>
                                 </div>
                                 <?php else: ?>
@@ -397,33 +399,22 @@ function selectClsItem(code) {
     if (!trigger) return;
     closeClsPicker();
 
-    var tr = trigger.closest('tr');
-    var codeSpan = tr ? tr.querySelector('.result-code') : null;
     var span = trigger.querySelector('span');
 
+    // 드롭다운 버튼 형태 유지 · 라벨/코드만 갱신 (.result-code = trigger 자신이라 별도 변조 불필요)
     if (code) {
         var found = clsCategories.find(function(c) { return c.code === code; });
         var label = found ? found.name : code;
         if (span) span.textContent = label;
         trigger.setAttribute('data-code', code);
-        trigger.classList.remove('text-slate-500', 'border-dashed');
+        trigger.classList.remove('text-slate-500', 'border-dashed', 'animate-pulse-subtle');
         trigger.classList.add('text-slate-100');
         trigger.style.borderStyle = 'solid';
-        if (codeSpan) {
-            codeSpan.textContent = label;
-            codeSpan.dataset.code = code;
-            codeSpan.className = 'px-2 py-0.5 text-sm rounded-full bg-primary/10 text-primary result-code';
-        }
     } else {
         if (span) span.textContent = '계정과목 선택';
         trigger.setAttribute('data-code', '');
         trigger.classList.remove('text-slate-100');
         trigger.classList.add('text-slate-500', 'border-dashed');
-        if (codeSpan) {
-            codeSpan.textContent = '미분류';
-            codeSpan.dataset.code = '';
-            codeSpan.className = 'px-2 py-0.5 text-sm rounded-full bg-slate-800 text-slate-500 result-code';
-        }
     }
 }
 
@@ -692,11 +683,16 @@ function updateStats(results) {
 function updateCategory(rowIdx, code, name) {
     const row = document.querySelector(`tr[data-row="${rowIdx}"]`);
     if (!row) return;
-    const codeSpan = row.querySelector('.result-code');
-    if (!codeSpan || !code) return;
-    codeSpan.textContent = name;
-    codeSpan.dataset.code = code;
-    codeSpan.className = 'px-2 py-0.5 text-sm rounded-full bg-primary/10 text-primary result-code';
+    const btn = row.querySelector('.result-code');
+    if (!btn || !code) return;
+    // 드롭다운 버튼 유지 · 라벨/코드만 갱신 (pill로 변조하면 재선택 불가 + 열 정렬 깨짐)
+    const label = btn.querySelector('span');
+    if (label) label.textContent = name; else btn.textContent = name;
+    btn.dataset.code = code;
+    btn.setAttribute('data-code', code);
+    btn.classList.remove('text-slate-500', 'border-dashed', 'animate-pulse-subtle');
+    btn.classList.add('text-slate-100');
+    btn.style.borderStyle = 'solid';
 }
 
 function toggleAll(master) {
