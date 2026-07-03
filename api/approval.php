@@ -335,6 +335,9 @@ function getDocument(PDO $pdo): void
 // 문서 저장
 function saveDocument(PDO $pdo): void
 {
+    // 세션 사용자 전역 — 신규/수정 양쪽 경로에서 참조하므로 함수 진입 시 한 번만 선언
+    global $currentUserId, $currentUser, $currentUserName;
+
     $data = getJsonInput();
     $id = (int)($data['id'] ?? 0);
     $title = trim($data['title'] ?? '');

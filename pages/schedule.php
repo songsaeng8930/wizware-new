@@ -176,8 +176,8 @@ if ($pdo) {
                 <label for="cAllDay" class="text-sm text-slate-300">종일 일정</label>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-200 mb-1">카테고리</label>
-                <select id="cCategory" class="w-full border border-slate-800 rounded-lg px-3 py-2 text-sm focus:border-gray-300 outline-none"></select>
+                <label class="block text-sm font-medium text-slate-200 mb-1">캘린더</label>
+                <select id="cCalendar" class="w-full border border-slate-800 rounded-lg px-3 py-2 text-sm focus:border-gray-300 outline-none"></select>
             </div>
             <!-- 참석자 -->
             <div>
@@ -258,7 +258,7 @@ if ($pdo) {
                 <input type="checkbox" id="eAllDay" class="w-4 h-4 accent-primary rounded" onchange="toggleAllDay('e')">
                 <label for="eAllDay" class="text-sm text-slate-300">종일 일정</label>
             </div>
-            <div><label class="block text-sm font-medium text-slate-200 mb-1">카테고리</label><select id="eCategory" class="w-full border border-slate-800 rounded-lg px-3 py-2 text-sm focus:border-gray-300 outline-none"></select></div>
+            <div><label class="block text-sm font-medium text-slate-200 mb-1">캘린더</label><select id="eCalendar" class="w-full border border-slate-800 rounded-lg px-3 py-2 text-sm focus:border-gray-300 outline-none"></select></div>
             <div>
                 <label class="block text-sm font-medium text-slate-200 mb-1">참석자</label>
                 <div class="relative">

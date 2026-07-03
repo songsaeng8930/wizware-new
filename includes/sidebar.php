@@ -143,7 +143,7 @@ $menuSections = [
                 'children' => [
                     ['label' => '조직도', 'url' => $basePath . '/pages/organization.php'],
                     ['label' => '직원관리', 'url' => $basePath . '/pages/employees.php', 'active_urls' => [$basePath . '/pages/employee_register.php', $basePath . '/pages/employee_bulk.php']],
-                    ['label' => '근태 관리', 'url' => $basePath . '/pages/att_manage.php', 'active_urls' => [$basePath . '/pages/dept_attendance.php']],
+                    ['label' => '근태 관리', 'url' => $basePath . '/pages/att_manage.php'],
                     ['label' => '정보 변경요청', 'url' => $basePath . '/pages/employee_change_requests.php'],
                 ],
             ],

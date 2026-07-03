@@ -56,8 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
         initCalendar();
         renderCalendarList();
     });
-    populateCategorySelect('cCategory');
-    populateCategorySelect('eCategory');
+    populateCalendarSelect('cCalendar');
+    populateCalendarSelect('eCalendar');
     initAttendeeInput('c');
     initAttendeeInput('e');
     initTaskPanel();
@@ -903,6 +903,8 @@ window.openCreateModal = function (dateStr) {
     toggleAllDay('c');
     selectedAttendees.c = [];
     renderAttendeeTags('c');
+    populateCalendarSelect('cCalendar');
+    document.getElementById('cCalendar').value = '';
     showModal('createModal');
 };
 window.closeCreateModal = function () { hideModal('createModal'); };
@@ -916,7 +918,7 @@ window.saveEvent = function () {
         start_time: document.getElementById('cStartTime').value || null,
         end_time: document.getElementById('cEndTime').value || null,
         is_all_day: document.getElementById('cAllDay').checked,
-        category_item_id: document.getElementById('cCategory').value || null,
+        custom_calendar_id: document.getElementById('cCalendar').value || null,
         description: document.getElementById('cDesc').value.trim(),
         attendee_ids: selectedAttendees.c.map(a => a.id),
     };
@@ -1044,7 +1046,8 @@ window.switchToEdit = function () {
     document.getElementById('eStartTime').value = ev.start_time ? ev.start_time.substring(0, 5) : '';
     document.getElementById('eEndTime').value = ev.end_time ? ev.end_time.substring(0, 5) : '';
     document.getElementById('eAllDay').checked = ev.is_all_day == 1;
-    document.getElementById('eCategory').value = ev.category_item_id || '';
+    populateCalendarSelect('eCalendar');
+    document.getElementById('eCalendar').value = ev.customCalendarId || ev.custom_calendar_id || '';
     document.getElementById('eDesc').value = ev.description || '';
     toggleAllDay('e');
 
@@ -1062,7 +1065,7 @@ window.saveEdit = function () {
         start_time: document.getElementById('eStartTime').value || null,
         end_time: document.getElementById('eEndTime').value || null,
         is_all_day: document.getElementById('eAllDay').checked,
-        category_item_id: document.getElementById('eCategory').value || null,
+        custom_calendar_id: document.getElementById('eCalendar').value || null,
         description: document.getElementById('eDesc').value.trim(),
         attendee_ids: selectedAttendees.e.map(a => a.id),
     };
@@ -1200,6 +1203,16 @@ function populateCategorySelect(selectId) {
     const sel = document.getElementById(selectId);
     sel.innerHTML = '<option value="">선택 안함</option>' +
         categories.map(c => `<option value="${c.item_id}">${esc(c.name)}</option>`).join('');
+}
+
+// 일정을 넣을 캘린더 선택 (내 일정 = 기본, + 사용자가 만든 커스텀 캘린더)
+function populateCalendarSelect(selectId) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">내 일정</option>' +
+        customCalendars.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    sel.value = cur;
 }
 
 function showModal(id) {

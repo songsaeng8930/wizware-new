@@ -235,9 +235,6 @@ $initType = isset($_GET['type']) ? trim($_GET['type']) : '';
                     <td class="form-td">
                         <div class="flex items-center gap-3">
                             <input type="file" id="attachFile" class="reg-file-sm flex-1" multiple>
-                            <button type="button" onclick="openTemplateSelect()" class="px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shrink-0">
-                                <i data-lucide="file-text" class="mr-1 w-3.5 h-3.5"></i> 양식선택
-                            </button>
                         </div>
                         <div id="attachList" class="mt-2 space-y-1"></div>
                     </td>
@@ -521,6 +518,23 @@ function onDocTypeChange() {
     document.getElementById('docTitle').placeholder = dt + ' 제목을 입력해주세요';
     filterLineSelect(dt);
     applyAutoRoute();
+    loadTemplateForDocType(dt);   // 문서종류에 맞는 양식 본문 자동 로드
+}
+
+// 문서종류에 해당하는 양식 본문/제목을 에디터에 반영 (onDocTypeChange를 다시 호출하지 않아 재귀 없음)
+async function loadTemplateForDocType(dt) {
+    const f = FORMS.find(x => x.doc_type === dt);
+    if (!f) return;
+    selectedFormId = f.id;
+    const editor = document.getElementById('editorContent');
+    const titleInput = document.getElementById('docTitle');
+    // 제목이 비어있으면 양식 제목으로 채움 (사용자 입력 보존)
+    if (titleInput && !titleInput.value.trim()) titleInput.value = f.title || f.doc_type;
+    const tpl = (f.content_template || '').trim();
+    if (!tpl) return;                       // 본문 양식 없으면 결재선만 바뀌고 본문은 유지
+    // 작성 중 내용이 있으면 덮어쓸지 확인
+    if (editor.innerHTML.trim() && !(await AppUI.confirm(dt + ' 양식으로 본문을 바꿀까요? 작성 중인 내용은 대체됩니다.'))) return;
+    editor.innerHTML = tpl;
 }
 
 function filterLineSelect(docType) {
@@ -945,7 +959,8 @@ function saveDraft(mode) {
             if (res.error) { alert(res.error); return; }
             alert(mode === 'submit' ? '결재가 상신되었습니다.' : '임시저장되었습니다.');
             location.href = redirectUrl;
-        });
+        })
+        .catch(e => alert('저장 중 오류가 발생했습니다: ' + (e && e.message ? e.message : e)));
     } else {
         alert(mode === 'submit' ? '결재가 상신되었습니다.' : '임시저장되었습니다.');
         location.href = redirectUrl;
@@ -968,9 +983,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var match = Array.from(docTypeSel.options).find(function(o) { return o.value === INIT_TYPE; });
         if (match) {
             docTypeSel.value = INIT_TYPE;
-            onDocTypeChange();
-            var form = FORMS.find(function(f) { return f.doc_type === INIT_TYPE; });
-            if (form) selectTemplate(form.id);
+            onDocTypeChange();   // 결재선 + 양식 본문 자동 로드
         }
     }
 
